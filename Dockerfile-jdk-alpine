@@ -1,0 +1,27 @@
+FROM alpine:3.10.3
+
+LABEL maintainer="weitom <1830624909@qq.com>"
+
+#Default to UTF-8 file.encoding
+ENV LANG=C.UTF-8
+
+ENV TIMEZONE Asia/Shanghai
+ENV TZ=Asia/Shanghai
+RUN sed -i -e 's/dl-cdn/dl-4/g' /etc/apk/repositories && apk add -U tzdata && ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo "${TIMEZONE}" > /etc/timezone
+
+RUN apk add fontconfig && apk add --update ttf-dejavu && fc-cache --force
+
+RUN apk update && \
+    apk add --no-cache bash  net-tools && \
+    apk add --no-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ lrzsz 
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
+RUN { \
+        echo '#!/bin/sh'; \
+        echo 'set -e'; \
+        echo; \
+        echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+    } > /usr/local/bin/docker-java-home \
+    && chmod +x /usr/local/bin/docker-java-home
+RUN apk add --no-cache openjdk8 && [ "$JAVA_HOME" = "$(docker-java-home)" ]
+RUN rm -rf /var/cache/apk/*
